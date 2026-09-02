@@ -33,7 +33,7 @@ export async function uploadDayPhoto(formData: FormData) {
     .from(BUCKET)
     .upload(path, file, {
       contentType: "image/webp",
-      upsert: false, // не даємо перезаписати фото цього дня
+      upsert: false,
     });
 
   if (uploadError) {
@@ -51,10 +51,9 @@ export async function uploadDayPhoto(formData: FormData) {
     user_id: user.id,
     date: dateKey,
     image_url: publicUrl,
-  });
+  } as never);
 
   if (insertError) {
-    // Прибираємо файл, якщо запис у БД не вдався (наприклад, дубль дати)
     await supabase.storage.from(BUCKET).remove([path]);
     if (insertError.message.toLowerCase().includes("duplicate")) {
       return { error: "Фото на цей день вже додано." };
@@ -88,8 +87,10 @@ export async function getPhotosForMonth(year: number, month: number): Promise<Ph
 
   if (error || !data) return {};
 
-  return data.reduce<PhotosByDate>((acc, photo) => {
-    acc[photo.date] = photo as Photo;
+  const rows = data as unknown as Photo[];
+
+  return rows.reduce<PhotosByDate>((acc, photo) => {
+    acc[photo.date] = photo;
     return acc;
   }, {});
 }
@@ -110,8 +111,10 @@ export async function getPhotosByDates(dateKeys: string[]): Promise<PhotosByDate
 
   if (error || !data) return {};
 
-  return data.reduce<PhotosByDate>((acc, photo) => {
-    acc[photo.date] = photo as Photo;
+  const rows = data as unknown as Photo[];
+
+  return rows.reduce<PhotosByDate>((acc, photo) => {
+    acc[photo.date] = photo;
     return acc;
   }, {});
 }
